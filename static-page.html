@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook/Instagram API Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Facebook/Instagram API Dashboard</h1>
+        
+        <!-- Input Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">API Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="pageId" class="block text-sm font-medium text-gray-700 mb-2">
+                        Facebook Page ID
+                    </label>
+                    <input
+                        type="text"
+                        id="pageId"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter Facebook Page ID"
+                    />
+                </div>
+                <div>
+                    <label for="instagramAccountId" class="block text-sm font-medium text-gray-700 mb-2">
+                        Instagram Account ID
+                    </label>
+                    <input
+                        type="text"
+                        id="instagramAccountId"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter Instagram Account ID"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="border-b border-gray-200">
+                <nav class="-mb-px flex">
+                    <button
+                        onclick="setActiveTab('facebook-comments')"
+                        id="tab-facebook-comments"
+                        class="py-2 px-4 border-b-2 font-medium text-sm border-blue-500 text-blue-600"
+                    >
+                        Facebook Comments
+                    </button>
+                    <button
+                        onclick="setActiveTab('instagram-comments')"
+                        id="tab-instagram-comments"
+                        class="py-2 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    >
+                        Instagram Comments
+                    </button>
+                    <button
+                        onclick="setActiveTab('facebook-messages')"
+                        id="tab-facebook-messages"
+                        class="py-2 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    >
+                        Facebook Messages
+                    </button>
+                </nav>
+            </div>
+
+            <div class="p-6">
+                <!-- Facebook Comments Tab -->
+                <div id="panel-facebook-comments">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Facebook Comments</h3>
+                        <button
+                            onclick="fetchFacebookComments()"
+                            id="btn-fetch-fb-comments"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            Fetch Comments
+                        </button>
+                    </div>
+                    <div id="facebook-comments-list" class="space-y-4">
+                        <p class="text-gray-500 text-center py-8">No Facebook comments found. Click "Fetch Comments" to load data.</p>
+                    </div>
+                </div>
+
+                <!-- Instagram Comments Tab -->
+                <div id="panel-instagram-comments" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Instagram Comments</h3>
+                        <button
+                            onclick="fetchInstagramComments()"
+                            id="btn-fetch-ig-comments"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            Fetch Comments
+                        </button>
+                    </div>
+                    <div id="instagram-comments-list" class="space-y-4">
+                        <p class="text-gray-500 text-center py-8">No Instagram comments found. Click "Fetch Comments" to load data.</p>
+                    </div>
+                </div>
+
+                <!-- Facebook Messages Tab -->
+                <div id="panel-facebook-messages" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold">Facebook Messages</h3>
+                        <button
+                            onclick="fetchFacebookMessages()"
+                            id="btn-fetch-fb-messages"
+                            class="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:opacity-50"
+                        >
+                            Fetch Messages
+                        </button>
+                    </div>
+                    <div id="facebook-messages-list" class="space-y-4">
+                        <p class="text-gray-500 text-center py-8">No Facebook messages found. Click "Fetch Messages" to load data.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let activeTab = 'facebook-comments';
+        let loading = false;
+
+        // Tab switching
+        function setActiveTab(tab) {
+            activeTab = tab;
+            
+            // Update tab styles
+            const tabs = ['facebook-comments', 'instagram-comments', 'facebook-messages'];
+            tabs.forEach(t => {
+                const tabElement = document.getElementById(`tab-${t}`);
+                const panelElement = document.getElementById(`panel-${t}`);
+                
+                if (t === tab) {
+                    tabElement.className = 'py-2 px-4 border-b-2 font-medium text-sm border-blue-500 text-blue-600';
+                    panelElement.classList.remove('hidden');
+                } else {
+                    tabElement.className = 'py-2 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300';
+                    panelElement.classList.add('hidden');
+                }
+            });
+        }
+
+        // Utility functions
+        function formatDate(dateString) {
+            return new Date(dateString).toLocaleString();
+        }
+
+        function setLoading(isLoading) {
+            loading = isLoading;
+            document.getElementById('btn-fetch-fb-comments').disabled = isLoading;
+            document.getElementById('btn-fetch-ig-comments').disabled = isLoading;
+            document.getElementById('btn-fetch-fb-messages').disabled = isLoading;
+            
+            if (isLoading) {
+                document.getElementById('btn-fetch-fb-comments').textContent = 'Loading...';
+                document.getElementById('btn-fetch-ig-comments').textContent = 'Loading...';
+                document.getElementById('btn-fetch-fb-messages').textContent = 'Loading...';
+            } else {
+                document.getElementById('btn-fetch-fb-comments').textContent = 'Fetch Comments';
+                document.getElementById('btn-fetch-ig-comments').textContent = 'Fetch Comments';
+                document.getElementById('btn-fetch-fb-messages').textContent = 'Fetch Messages';
+            }
+        }
+
+        // Fetch functions
+        async function fetchFacebookComments() {
+            const pageId = document.getElementById('pageId').value.trim();
+            if (!pageId) {
+                alert('Please enter a Facebook Page ID');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/facebook/comments?pageId=${encodeURIComponent(pageId)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderFacebookComments(data.comments);
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert('Failed to fetch Facebook comments');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function fetchInstagramComments() {
+            const accountId = document.getElementById('instagramAccountId').value.trim();
+            if (!accountId) {
+                alert('Please enter an Instagram Account ID');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/instagram/comments?accountId=${encodeURIComponent(accountId)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderInstagramComments(data.comments);
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert('Failed to fetch Instagram comments');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        async function fetchFacebookMessages() {
+            const pageId = document.getElementById('pageId').value.trim();
+            if (!pageId) {
+                alert('Please enter a Facebook Page ID');
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const response = await fetch(`/api/facebook/messages?pageId=${encodeURIComponent(pageId)}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    renderFacebookMessages(data.messages);
+                } else {
+                    alert(`Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert('Failed to fetch Facebook messages');
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        // Render functions
+        function renderFacebookComments(comments) {
+            const container = document.getElementById('facebook-comments-list');
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No Facebook comments found.</p>';
+                return;
+            }
+
+            container.innerHTML = comments.map(comment => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <strong class="text-gray-900">${comment.from.name}</strong>
+                        <span class="text-sm text-gray-500">${formatDate(comment.created_time)}</span>
+                    </div>
+                    <p class="text-gray-700 mb-2">${comment.message}</p>
+                    <div class="flex space-x-4 text-sm text-gray-500">
+                        <span>👍 ${comment.like_count}</span>
+                        <span>💬 ${comment.comment_count}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderInstagramComments(comments) {
+            const container = document.getElementById('instagram-comments-list');
+            
+            if (comments.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No Instagram comments found.</p>';
+                return;
+            }
+
+            container.innerHTML = comments.map(comment => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <strong class="text-gray-900">@${comment.username}</strong>
+                        <span class="text-sm text-gray-500">${formatDate(comment.timestamp)}</span>
+                    </div>
+                    <p class="text-gray-700 mb-2">${comment.text}</p>
+                    <div class="flex space-x-4 text-sm text-gray-500">
+                        <span>👍 ${comment.like_count}</span>
+                        <span>💬 ${comment.replies_count}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderFacebookMessages(messages) {
+            const container = document.getElementById('facebook-messages-list');
+            
+            if (messages.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">No Facebook messages found.</p>';
+                return;
+            }
+
+            container.innerHTML = messages.map(message => `
+                <div class="border border-gray-200 rounded-lg p-4">
+                    <div class="flex justify-between items-start mb-2">
+                        <strong class="text-gray-900">${message.from.name}</strong>
+                        <span class="text-sm text-gray-500">${formatDate(message.created_time)}</span>
+                    </div>
+                    <p class="text-gray-700">${message.message}</p>
+                </div>
+            `).join('');
+        }
+    </script>
+</body>
+</html>

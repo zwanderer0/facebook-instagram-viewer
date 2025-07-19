@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook/Instagram Comments Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Facebook/Instagram Comments Viewer</h1>
+        
+        <!-- Token Input -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Your Access Token</h2>
+            <textarea
+                id="accessToken"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
+                rows="3"
+                placeholder="Paste your Facebook User Access Token here">EAAPLYfWGwE4BPI4VZCTtfeZAq9NzAcu8FdAu2TOHxsyMqUZAwZCw8kP0Ddoc82vgRC5KdguxU85WiyK2agoutGqTYsmdJ8cGrJRhPGxgH2JnZAJCZBfvlZCQEiWqN8vVOluVPYV0c9GFQpIPLWB7noWFWHq00hX67x0k5z8TcKmG91ZBhtr4OwMdRtZCft3W7BbBz09i8SoD81GXOQmNVBXe58Hu5SS8K13vzffpsv7GtnbgtSSvghgxPUIoZCUFYZD</textarea>
+            <button onclick="loadPages()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Load My Pages
+            </button>
+        </div>
+
+        <!-- Pages List -->
+        <div id="pagesSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Select a Page</h2>
+            <div id="pagesList" class="space-y-2"></div>
+        </div>
+
+        <!-- Data Display -->
+        <div id="dataSection" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <div class="mb-4">
+                <button onclick="showTab('facebook')" id="fbTab" class="tab-btn bg-blue-500 text-white px-4 py-2 rounded mr-2">Facebook Comments</button>
+                <button onclick="showTab('instagram')" id="igTab" class="tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded">Instagram Comments</button>
+            </div>
+            <div id="dataContent" class="max-h-[600px] overflow-y-auto"></div>
+        </div>
+
+        <!-- Loading indicator -->
+        <div id="loading" class="fixed top-4 right-4 bg-blue-500 text-white px-4 py-2 rounded shadow-lg hidden">
+            Loading...
+        </div>
+    </div>
+
+    <script>
+        let currentToken = '';
+        let currentPageId = '';
+        let currentPageToken = '';
+        let currentPageName = '';
+        let currentInstagramId = '';
+        let fbComments = [];
+        let igComments = [];
+
+        function showLoading(show) {
+            document.getElementById('loading').classList.toggle('hidden', !show);
+        }
+
+        async function makeAPICall(url) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.error) {
+                    console.error('API Error:', data.error);
+                    return null;
+                }
+                return data;
+            } catch (error) {
+                console.error('Network Error:', error);
+                return null;
+            }
+        }
+
+        async function loadPages() {
+            currentToken = document.getElementById('accessToken').value.trim();
+            if (!currentToken) {
+                alert('Please enter an access token');
+                return;
+            }
+
+            showLoading(true);
+            
+            const data = await makeAPICall(
+                `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token,instagram_business_account,fan_count&access_token=${currentToken}`
+            );
+
+            showLoading(false);
+
+            if (data && data.data && data.data.length > 0) {
+                displayPages(data.data);
+            } else {
+                alert('No pages found');
+            }
+        }
+
+        function displayPages(pages) {
+            const pagesSection = document.getElementById('pagesSection');
+            const pagesList = document.getElementById('pagesList');
+            
+            pagesList.innerHTML = pages.map(page => `
+                <div class="border rounded p-4 hover:bg-gray-50 cursor-pointer" onclick='selectPage(${JSON.stringify({
+                    id: page.id,
+                    token: page.access_token,
+                    name: page.name,
+                    instagram: page.instagram_business_account?.id || null
+                })})'>
+                    <h3 class="font-semibold">${page.name}</h3>
+                    <p class="text-sm text-gray-600">Fans: ${page.fan_count?.toLocaleString() || 'N/A'}</p>
+                    ${page.instagram_business_account ? '<p class="text-sm text-green-600">✓ Has Instagram</p>' : '<p class="text-sm text-gray-400">No Instagram</p>'}
+                </div>
+            `).join('');
+            
+            pagesSection.classList.remove('hidden');
+        }
+
+        async function selectPage({id, token, name, instagram}) {
+            currentPageId = id;
+            currentPageToken = token;
+            currentPageName = name;
+            currentInstagramId = instagram;
+            
+            showLoading(true);
+            document.getElementById('dataSection').classList.remove('hidden');
+            
+            // Reset data
+            fbComments = [];
+            igComments = [];
+            
+            // Load Facebook comments
+            await loadFacebookComments();
+            
+            // Load Instagram comments if available
+            if (currentInstagramId) {
+                await loadInstagramComments();
+            }
+            
+            showLoading(false);
+            showTab('facebook');
+        }
+
+        async function loadFacebookComments() {
+            // Get posts with comments
+            const postsData = await makeAPICall(
+                `https://graph.facebook.com/v19.0/${currentPageId}/posts?fields=id,message,created_time,comments.limit(100){id,message,created_time,from,like_count}&limit=50&access_token=${currentPageToken}`
+            );
+            
+            if (postsData && postsData.data) {
+                fbComments = [];
+                for (const post of postsData.data) {
+                    if (post.comments && post.comments.data) {
+                        post.comments.data.forEach(comment => {
+                            fbComments.push({
+                                ...comment,
+                                post_message: post.message,
+                                post_id: post.id,
+                                post_time: post.created_time
+                            });
+                        });
+                    }
+                }
+            }
+        }
+
+        async function loadInstagramComments() {
+            // Get Instagram media with comments
+            const mediaData = await makeAPICall(
+                `https://graph.facebook.com/v19.0/${currentInstagramId}/media?fields=id,caption,media_type,media_url,timestamp,comments_count,like_count,comments.limit(100){id,text,username,timestamp,like_count}&limit=50&access_token=${currentPageToken}`
+            );
+            
+            if (mediaData && mediaData.data) {
+                igComments = [];
+                for (const media of mediaData.data) {
+                    if (media.comments && media.comments.data) {
+                        media.comments.data.forEach(comment => {
+                            igComments.push({
+                                ...comment,
+                                media_caption: media.caption,
+                                media_id: media.id,
+                                media_type: media.media_type,
+                                media_time: media.timestamp,
+                                media_likes: media.like_count
+                            });
+                        });
+                    }
+                }
+            }
+        }
+
+        function showTab(tab) {
+            // Update button styles
+            document.getElementById('fbTab').className = tab === 'facebook' ? 
+                'tab-btn bg-blue-500 text-white px-4 py-2 rounded mr-2' : 
+                'tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2';
+            document.getElementById('igTab').className = tab === 'instagram' ? 
+                'tab-btn bg-blue-500 text-white px-4 py-2 rounded' : 
+                'tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded';
+
+            const content = document.getElementById('dataContent');
+            
+            if (tab === 'facebook') {
+                content.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-4">Facebook Comments (${fbComments.length} total)</h3>
+                    <div class="space-y-4">
+                        ${fbComments.length > 0 ? fbComments.map(comment => `
+                            <div class="border rounded-lg p-4 hover:bg-gray-50">
+                                <div class="mb-2">
+                                    <p class="text-xs text-gray-500 mb-1">On post: "${comment.post_message || 'No text'}"</p>
+                                </div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <strong class="text-gray-900">${comment.from?.name || 'Unknown'}</strong>
+                                    <span class="text-sm text-gray-500">${new Date(comment.created_time).toLocaleString()}</span>
+                                </div>
+                                <p class="text-gray-700">${comment.message}</p>
+                                ${comment.like_count > 0 ? `<p class="text-sm text-gray-500 mt-2">👍 ${comment.like_count} likes</p>` : ''}
+                            </div>
+                        `).join('') : '<p class="text-gray-500 text-center py-8">No comments found on recent posts</p>'}
+                    </div>
+                `;
+            } else if (tab === 'instagram') {
+                if (!currentInstagramId) {
+                    content.innerHTML = '<p class="text-gray-500 text-center py-8">No Instagram account connected to this page</p>';
+                    return;
+                }
+                
+                content.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-4">Instagram Comments (${igComments.length} total)</h3>
+                    <div class="space-y-4">
+                        ${igComments.length > 0 ? igComments.map(comment => `
+                            <div class="border rounded-lg p-4 hover:bg-gray-50">
+                                <div class="mb-2">
+                                    <p class="text-xs text-gray-500 mb-1">On post: "${comment.media_caption || 'No caption'}"</p>
+                                    <p class="text-xs text-gray-500">Post has ${comment.media_likes} likes</p>
+                                </div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <strong class="text-gray-900">@${comment.username}</strong>
+                                    <span class="text-sm text-gray-500">${new Date(comment.timestamp).toLocaleString()}</span>
+                                </div>
+                                <p class="text-gray-700">${comment.text}</p>
+                                ${comment.like_count > 0 ? `<p class="text-sm text-gray-500 mt-2">❤️ ${comment.like_count} likes</p>` : ''}
+                            </div>
+                        `).join('') : '<p class="text-gray-500 text-center py-8">No comments found on recent Instagram posts</p>'}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

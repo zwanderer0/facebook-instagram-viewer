@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook API Diagnostic</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Facebook API Permission Checker</h1>
+        
+        <!-- Token Input -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Your Access Token</h2>
+            <textarea
+                id="accessToken"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
+                rows="3">EAAPLYfWGwE4BPI4VZCTtfeZAq9NzAcu8FdAu2TOHxsyMqUZAwZCw8kP0Ddoc82vgRC5KdguxU85WiyK2agoutGqTYsmdJ8cGrJRhPGxgH2JnZAJCZBfvlZCQEiWqN8vVOluVPYV0c9GFQpIPLWB7noWFWHq00hX67x0k5z8TcKmG91ZBhtr4OwMdRtZCft3W7BbBz09i8SoD81GXOQmNVBXe58Hu5SS8K13vzffpsv7GtnbgtSSvghgxPUIoZCUFYZD</textarea>
+            <button onclick="runDiagnostics()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Run Diagnostics
+            </button>
+        </div>
+
+        <!-- Results -->
+        <div id="results" class="space-y-4"></div>
+
+        <!-- Fix Instructions -->
+        <div id="fixInstructions" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4 text-red-600">How to Fix Permission Issues</h2>
+            <div class="space-y-4">
+                <div class="border-l-4 border-red-400 bg-red-50 p-4">
+                    <p class="font-semibold">Quick Fix: Generate New Token with All Permissions</p>
+                    <ol class="list-decimal ml-6 mt-2 space-y-2">
+                        <li>
+                            <a href="https://developers.facebook.com/tools/explorer/?classic=0" target="_blank" class="text-blue-600 hover:underline">
+                                Open Graph API Explorer in New Tab →
+                            </a>
+                        </li>
+                        <li>Select your app (1068046521647182)</li>
+                        <li>Click "Generate Access Token"</li>
+                        <li>Check ALL of these permissions:
+                            <div id="requiredPermissions" class="mt-2 bg-gray-100 p-2 rounded text-sm font-mono"></div>
+                        </li>
+                        <li>Click "Generate Access Token" and approve</li>
+                        <li>Copy the new token and paste it above</li>
+                    </ol>
+                </div>
+
+                <div class="border-l-4 border-yellow-400 bg-yellow-50 p-4">
+                    <p class="font-semibold">Alternative: Request Specific Permissions</p>
+                    <p class="mt-2">Your current token is missing permissions. Error codes:</p>
+                    <ul class="list-disc ml-6 mt-2">
+                        <li><strong>Error 10:</strong> Permission denied - missing required permissions</li>
+                        <li><strong>Error 200:</strong> Permissions error - need additional access rights</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function runDiagnostics() {
+            const token = document.getElementById('accessToken').value.trim();
+            const results = document.getElementById('results');
+            results.innerHTML = '<div class="text-center py-4">Running diagnostics...</div>';
+
+            const tests = [
+                {
+                    name: 'Token Info',
+                    url: `https://graph.facebook.com/v19.0/debug_token?input_token=${token}&access_token=${token}`,
+                    check: (data) => data.data
+                },
+                {
+                    name: 'User Info',
+                    url: `https://graph.facebook.com/v19.0/me?access_token=${token}`,
+                    check: (data) => data.id
+                },
+                {
+                    name: 'Pages List',
+                    url: `https://graph.facebook.com/v19.0/me/accounts?access_token=${token}`,
+                    check: (data) => data.data
+                },
+                {
+                    name: 'Permissions',
+                    url: `https://graph.facebook.com/v19.0/me/permissions?access_token=${token}`,
+                    check: (data) => data.data
+                }
+            ];
+
+            let testResults = [];
+            let hasErrors = false;
+            let missingPermissions = new Set();
+
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        testResults.push({
+                            name: test.name,
+                            status: 'error',
+                            message: `${data.error.message} (Code: ${data.error.code})`,
+                            data: data.error
+                        });
+                        hasErrors = true;
+                    } else if (test.check(data)) {
+                        testResults.push({
+                            name: test.name,
+                            status: 'success',
+                            message: 'Working',
+                            data: data
+                        });
+                    } else {
+                        testResults.push({
+                            name: test.name,
+                            status: 'warning',
+                            message: 'No data returned',
+                            data: data
+                        });
+                    }
+                } catch (error) {
+                    testResults.push({
+                        name: test.name,
+                        status: 'error',
+                        message: error.message,
+                        data: null
+                    });
+                    hasErrors = true;
+                }
+            }
+
+            // Now test specific page permissions
+            const pagesTest = testResults.find(t => t.name === 'Pages List');
+            if (pagesTest && pagesTest.status === 'success' && pagesTest.data.data.length > 0) {
+                const firstPage = pagesTest.data.data[0];
+                const pageTests = [
+                    {
+                        name: `Page Posts (${firstPage.name})`,
+                        url: `https://graph.facebook.com/v19.0/${firstPage.id}/posts?access_token=${firstPage.access_token}`,
+                        permission: 'pages_read_engagement'
+                    },
+                    {
+                        name: `Page Conversations (${firstPage.name})`,
+                        url: `https://graph.facebook.com/v19.0/${firstPage.id}/conversations?access_token=${firstPage.access_token}`,
+                        permission: 'pages_messaging'
+                    },
+                    {
+                        name: `Instagram Account (${firstPage.name})`,
+                        url: `https://graph.facebook.com/v19.0/${firstPage.id}?fields=instagram_business_account&access_token=${firstPage.access_token}`,
+                        permission: 'instagram_basic'
+                    }
+                ];
+
+                for (const test of pageTests) {
+                    try {
+                        const response = await fetch(test.url);
+                        const data = await response.json();
+                        
+                        if (data.error) {
+                            testResults.push({
+                                name: test.name,
+                                status: 'error',
+                                message: `${data.error.message} (Code: ${data.error.code})`,
+                                data: data.error
+                            });
+                            missingPermissions.add(test.permission);
+                            hasErrors = true;
+                        } else {
+                            testResults.push({
+                                name: test.name,
+                                status: 'success',
+                                message: 'Working',
+                                data: data
+                            });
+                        }
+                    } catch (error) {
+                        testResults.push({
+                            name: test.name,
+                            status: 'error',
+                            message: error.message,
+                            data: null
+                        });
+                        missingPermissions.add(test.permission);
+                        hasErrors = true;
+                    }
+                }
+            }
+
+            // Display results
+            results.innerHTML = testResults.map(result => `
+                <div class="bg-white rounded-lg shadow-md p-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-semibold">${result.name}</h3>
+                        <span class="px-2 py-1 rounded text-sm ${
+                            result.status === 'success' ? 'bg-green-100 text-green-800' :
+                            result.status === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }">
+                            ${result.status.toUpperCase()}
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">${result.message}</p>
+                    ${result.data && result.name === 'Permissions' ? `
+                        <div class="mt-2 text-xs bg-gray-100 p-2 rounded">
+                            Granted: ${result.data.data.filter(p => p.status === 'granted').map(p => p.permission).join(', ') || 'None'}
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+
+            // Show fix instructions if there are errors
+            if (hasErrors) {
+                document.getElementById('fixInstructions').classList.remove('hidden');
+                
+                const allPermissions = [
+                    'pages_show_list',
+                    'pages_read_engagement', 
+                    'pages_read_user_content',
+                    'pages_manage_metadata',
+                    'pages_messaging',
+                    'instagram_basic',
+                    'instagram_manage_comments',
+                    'instagram_manage_messages',
+                    'business_management'
+                ];
+                
+                document.getElementById('requiredPermissions').textContent = allPermissions.join(', ');
+            }
+        }
+
+        // Run diagnostics on load
+        window.onload = () => runDiagnostics();
+    </script>
+</body>
+</html>

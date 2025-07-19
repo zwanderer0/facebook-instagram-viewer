@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook/Instagram Data Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Facebook/Instagram Data Viewer</h1>
+        
+        <!-- Token Input -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Step 1: Enter Your Access Token</h2>
+            <textarea
+                id="accessToken"
+                class="w-full px-3 py-2 border border-gray-300 rounded-md font-mono text-sm"
+                rows="3"
+                placeholder="Paste your Facebook User Access Token here">EAAPLYfWGwE4BPI4VZCTtfeZAq9NzAcu8FdAu2TOHxsyMqUZAwZCw8kP0Ddoc82vgRC5KdguxU85WiyK2agoutGqTYsmdJ8cGrJRhPGxgH2JnZAJCZBfvlZCQEiWqN8vVOluVPYV0c9GFQpIPLWB7noWFWHq00hX67x0k5z8TcKmG91ZBhtr4OwMdRtZCft3W7BbBz09i8SoD81GXOQmNVBXe58Hu5SS8K13vzffpsv7GtnbgtSSvghgxPUIoZCUFYZD</textarea>
+            <button onclick="loadPages()" class="mt-2 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                Load My Pages
+            </button>
+        </div>
+
+        <!-- Pages List -->
+        <div id="pagesSection" class="bg-white rounded-lg shadow-md p-6 mb-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Step 2: Select a Page</h2>
+            <div id="pagesList" class="space-y-2"></div>
+        </div>
+
+        <!-- Data Display -->
+        <div id="dataSection" class="bg-white rounded-lg shadow-md p-6 hidden">
+            <h2 class="text-xl font-semibold mb-4">Page Data</h2>
+            <div class="mb-4">
+                <button onclick="showTab('posts')" class="tab-btn bg-blue-500 text-white px-4 py-2 rounded mr-2">Posts & Comments</button>
+                <button onclick="showTab('messages')" class="tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2">Messages</button>
+                <button onclick="showTab('instagram')" class="tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded">Instagram</button>
+            </div>
+            <div id="dataContent"></div>
+        </div>
+
+        <!-- Status Messages -->
+        <div id="status" class="fixed bottom-4 right-4 hidden"></div>
+    </div>
+
+    <script>
+        let currentToken = '';
+        let currentPageId = '';
+        let currentPageToken = '';
+        let allData = {};
+
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.className = `fixed bottom-4 right-4 px-4 py-2 rounded shadow-lg ${
+                type === 'error' ? 'bg-red-500 text-white' : 
+                type === 'success' ? 'bg-green-500 text-white' : 
+                'bg-blue-500 text-white'
+            }`;
+            status.textContent = message;
+            status.classList.remove('hidden');
+            setTimeout(() => status.classList.add('hidden'), 3000);
+        }
+
+        async function makeAPICall(url) {
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (data.error) {
+                    throw new Error(data.error.message);
+                }
+                return data;
+            } catch (error) {
+                console.error('API Error:', error);
+                showStatus(`Error: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function loadPages() {
+            currentToken = document.getElementById('accessToken').value.trim();
+            if (!currentToken) {
+                showStatus('Please enter an access token', 'error');
+                return;
+            }
+
+            showStatus('Loading pages...');
+            
+            const data = await makeAPICall(
+                `https://graph.facebook.com/v19.0/me/accounts?fields=id,name,access_token,instagram_business_account,fan_count&access_token=${currentToken}`
+            );
+
+            if (data && data.data && data.data.length > 0) {
+                displayPages(data.data);
+                showStatus(`Found ${data.data.length} pages`, 'success');
+            } else {
+                showStatus('No pages found', 'error');
+            }
+        }
+
+        function displayPages(pages) {
+            const pagesSection = document.getElementById('pagesSection');
+            const pagesList = document.getElementById('pagesList');
+            
+            pagesList.innerHTML = pages.map(page => `
+                <div class="border rounded p-4 hover:bg-gray-50 cursor-pointer" onclick="selectPage('${page.id}', '${page.access_token}', '${page.name}')">
+                    <h3 class="font-semibold">${page.name}</h3>
+                    <p class="text-sm text-gray-600">ID: ${page.id}</p>
+                    <p class="text-sm text-gray-600">Fans: ${page.fan_count?.toLocaleString() || 'N/A'}</p>
+                    ${page.instagram_business_account ? '<p class="text-sm text-green-600">✓ Has Instagram</p>' : ''}
+                </div>
+            `).join('');
+            
+            pagesSection.classList.remove('hidden');
+        }
+
+        async function selectPage(pageId, pageToken, pageName) {
+            currentPageId = pageId;
+            currentPageToken = pageToken;
+            
+            showStatus(`Loading data for ${pageName}...`);
+            
+            // Reset data
+            allData = {
+                posts: [],
+                messages: [],
+                instagram: []
+            };
+
+            // Load all data in parallel
+            await Promise.all([
+                loadPosts(),
+                loadMessages(),
+                loadInstagram()
+            ]);
+
+            document.getElementById('dataSection').classList.remove('hidden');
+            showTab('posts');
+            showStatus('Data loaded successfully', 'success');
+        }
+
+        async function loadPosts() {
+            const data = await makeAPICall(
+                `https://graph.facebook.com/v19.0/${currentPageId}/posts?fields=id,message,created_time,comments.limit(10){id,message,created_time,from}&limit=25&access_token=${currentPageToken}`
+            );
+            
+            if (data && data.data) {
+                allData.posts = data.data;
+            }
+        }
+
+        async function loadMessages() {
+            const data = await makeAPICall(
+                `https://graph.facebook.com/v19.0/${currentPageId}/conversations?fields=id,participants,messages.limit(5){id,message,created_time,from}&limit=10&access_token=${currentPageToken}`
+            );
+            
+            if (data && data.data) {
+                allData.messages = data.data;
+            }
+        }
+
+        async function loadInstagram() {
+            // First get Instagram account ID
+            const pageData = await makeAPICall(
+                `https://graph.facebook.com/v19.0/${currentPageId}?fields=instagram_business_account&access_token=${currentPageToken}`
+            );
+            
+            if (pageData && pageData.instagram_business_account) {
+                const igId = pageData.instagram_business_account.id;
+                
+                // Get Instagram media
+                const mediaData = await makeAPICall(
+                    `https://graph.facebook.com/v19.0/${igId}/media?fields=id,caption,media_type,media_url,timestamp,comments_count,like_count,comments.limit(10){id,text,username,timestamp}&limit=25&access_token=${currentPageToken}`
+                );
+                
+                if (mediaData && mediaData.data) {
+                    allData.instagram = mediaData.data;
+                }
+            }
+        }
+
+        function showTab(tab) {
+            // Update button styles
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.className = 'tab-btn bg-gray-300 text-gray-700 px-4 py-2 rounded mr-2';
+            });
+            event.target.className = 'tab-btn bg-blue-500 text-white px-4 py-2 rounded mr-2';
+
+            const content = document.getElementById('dataContent');
+            
+            if (tab === 'posts') {
+                content.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-4">Posts & Comments</h3>
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        ${allData.posts.map(post => `
+                            <div class="border rounded p-4">
+                                <p class="mb-2">${post.message || '[No text]'}</p>
+                                <p class="text-sm text-gray-500 mb-2">${new Date(post.created_time).toLocaleString()}</p>
+                                ${post.comments && post.comments.data.length > 0 ? `
+                                    <div class="mt-2 pl-4 border-l-2 border-gray-200">
+                                        <p class="text-sm font-semibold mb-1">Comments:</p>
+                                        ${post.comments.data.map(comment => `
+                                            <div class="text-sm mb-1">
+                                                <span class="font-medium">${comment.from?.name || 'Unknown'}:</span>
+                                                ${comment.message}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('') || '<p class="text-gray-500">No posts found</p>'}
+                    </div>
+                `;
+            } else if (tab === 'messages') {
+                content.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-4">Messages</h3>
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        ${allData.messages.map(convo => `
+                            <div class="border rounded p-4">
+                                <p class="text-sm font-semibold mb-2">Conversation with ${convo.participants?.data[0]?.name || 'Unknown'}</p>
+                                ${convo.messages && convo.messages.data.length > 0 ? 
+                                    convo.messages.data.map(msg => `
+                                        <div class="text-sm mb-1">
+                                            <span class="font-medium">${msg.from?.name || 'Unknown'}:</span>
+                                            ${msg.message || '[No message]'}
+                                        </div>
+                                    `).join('') : 
+                                    '<p class="text-sm text-gray-500">No messages</p>'
+                                }
+                            </div>
+                        `).join('') || '<p class="text-gray-500">No conversations found</p>'}
+                    </div>
+                `;
+            } else if (tab === 'instagram') {
+                content.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-4">Instagram Posts & Comments</h3>
+                    <div class="space-y-4 max-h-96 overflow-y-auto">
+                        ${allData.instagram.map(post => `
+                            <div class="border rounded p-4">
+                                <p class="mb-2">${post.caption || '[No caption]'}</p>
+                                <p class="text-sm text-gray-500 mb-2">${new Date(post.timestamp).toLocaleString()}</p>
+                                <p class="text-sm text-gray-500 mb-2">❤️ ${post.like_count || 0} likes • 💬 ${post.comments_count || 0} comments</p>
+                                ${post.comments && post.comments.data.length > 0 ? `
+                                    <div class="mt-2 pl-4 border-l-2 border-gray-200">
+                                        <p class="text-sm font-semibold mb-1">Comments:</p>
+                                        ${post.comments.data.map(comment => `
+                                            <div class="text-sm mb-1">
+                                                <span class="font-medium">@${comment.username}:</span>
+                                                ${comment.text}
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('') || '<p class="text-gray-500">No Instagram account connected</p>'}
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
