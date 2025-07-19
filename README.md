@@ -1,71 +1,97 @@
 # Facebook/Instagram Comments Viewer
 
-A simple web application to view and manage comments from Facebook pages and Instagram business accounts using the Facebook Graph API.
+A production-ready web application that allows anyone to login with Facebook and view comments from their Facebook pages and Instagram business accounts.
 
 ## Features
 
-- View all Facebook page comments in one place
-- View all Instagram business account comments
-- Simple dropdown selection for multiple pages
-- Direct browser-based API calls (no backend required for the HTML version)
-- Next.js backend API for advanced features
+- **OAuth Login**: Users can login with their own Facebook account
+- **Multi-Page Support**: View comments from all your Facebook pages
+- **Instagram Integration**: Automatically shows Instagram comments if connected
+- **Real-time Updates**: Refresh button to get latest comments
+- **Responsive Design**: Works on desktop and mobile devices
+- **Secure**: Tokens stored locally, no server-side storage
 
-## Files
+## Deploy to Netlify
 
-### Standalone HTML Version (Recommended)
-- `facebook-viewer-final.html` - Working standalone version that pulls comments directly from Facebook/Instagram
+### One-Click Deploy
 
-### Full Application
-- Next.js application with API routes
-- TypeScript support
-- Tailwind CSS styling
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/zwanderer0/facebook-instagram-viewer)
 
-## Setup
+### Manual Deployment
 
-### For Standalone HTML Version
+1. Fork or clone this repository
 
-1. Get a Facebook User Access Token with these permissions:
-   - `pages_show_list`
-   - `pages_read_engagement`
-   - `pages_read_user_content`
-   - `instagram_basic`
-   - `instagram_manage_comments`
+2. Create a Facebook App:
+   - Go to [Facebook Developers](https://developers.facebook.com/apps/)
+   - Create a new app or use existing
+   - Add Facebook Login product
+   - Set OAuth Redirect URL to: `https://your-site.netlify.app/.netlify/functions/facebook-auth`
 
-2. Open `facebook-viewer-final.html` in your browser
-3. Paste your access token
-4. Click "Load My Pages"
-
-### For Full Next.js Application
-
-1. Install dependencies:
+3. Deploy to Netlify:
    ```bash
-   npm install
+   # Install Netlify CLI
+   npm install -g netlify-cli
+
+   # Login to Netlify
+   netlify login
+
+   # Deploy
+   netlify deploy --prod
    ```
 
-2. Create `.env.local` file with your Facebook API credentials:
-   ```
-   FACEBOOK_APP_ID=your_app_id
-   FACEBOOK_APP_SECRET=your_app_secret
-   FACEBOOK_ACCESS_TOKEN=your_user_access_token
-   ```
+4. Set Environment Variables in Netlify:
+   - Go to Site settings > Environment variables
+   - Add:
+     - `FACEBOOK_APP_ID` - Your Facebook App ID
+     - `FACEBOOK_APP_SECRET` - Your Facebook App Secret
 
-3. Run the development server:
-   ```bash
-   npm run dev
-   ```
+### Facebook App Configuration
 
-4. Open http://localhost:3000
+Your Facebook app needs these permissions (users will be asked to approve):
+- `pages_show_list` - List user's pages
+- `pages_read_engagement` - Read page posts and comments
+- `pages_read_user_content` - Read user content on pages
+- `instagram_basic` - Access Instagram account info
+- `instagram_manage_comments` - Read Instagram comments
 
-## Getting a Facebook Access Token
+### App Review (For Public Use)
 
-1. Go to [Facebook Graph API Explorer](https://developers.facebook.com/tools/explorer/)
-2. Select your app
-3. Click "Generate Access Token"
-4. Select the required permissions
-5. Copy the generated token
+To make the app available to any Facebook user (not just app developers):
 
-## Notes
+1. Submit for App Review in Facebook Developer Dashboard
+2. Request the permissions listed above
+3. Provide:
+   - Screencast showing app functionality
+   - Clear description of how permissions are used
+   - Privacy Policy URL
+   - Terms of Service URL
 
-- User access tokens expire after a certain period
-- For production use, implement token refresh or use long-lived tokens
-- The `pages_messaging` permission is required for reading Facebook messages (not included in basic version)
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Create .env file
+cp .env.example .env
+# Edit .env with your Facebook app credentials
+
+# Run with Netlify Dev
+netlify dev
+```
+
+Open http://localhost:8888
+
+## Architecture
+
+- **Frontend**: Vanilla JavaScript with Tailwind CSS
+- **Authentication**: OAuth 2.0 flow via Netlify Functions
+- **API Calls**: Direct to Facebook Graph API from browser
+- **Hosting**: Static site on Netlify with serverless functions
+
+## Privacy & Security
+
+- No user data is stored on servers
+- Access tokens are stored in browser localStorage
+- All API calls are made directly to Facebook
+- Users can revoke access anytime from Facebook settings
