@@ -24,9 +24,8 @@ exports.handler = async (event, context) => {
       'pages_show_list',
       'pages_read_engagement',
       'pages_read_user_content',
-      'instagram_basic',
-      'instagram_manage_comments',
-      'pages_messaging' // Optional
+      'instagram_business_basic',
+      'instagram_business_manage_comments'
     ].join(',');
 
     const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${scopes}&response_type=code`;
