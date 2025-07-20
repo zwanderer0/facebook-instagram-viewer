@@ -1,6 +1,10 @@
 [build]
   publish = "public"
   functions = "netlify/functions"
+  command = "echo 'Static site deployment'"
+
+[build.environment]
+  NETLIFY_NEXT_PLUGIN_SKIP = "true"
 
 [[redirects]]
   from = "/*"
