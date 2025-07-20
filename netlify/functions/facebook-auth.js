@@ -33,9 +33,7 @@ exports.handler = async (event, context) => {
     const scopes = [
       'pages_show_list',
       'pages_read_engagement',
-      'pages_read_user_content',
-      'instagram_manage_comments',
-      'read_insights'
+      'pages_read_user_content'
     ].join(',');
 
     const authUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${APP_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=${scopes}&response_type=code`;
