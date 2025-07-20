@@ -18,6 +18,16 @@ exports.handler = async (event, context) => {
   const APP_SECRET = process.env.FACEBOOK_APP_SECRET || '4ef4431231c770c7da966bbd31d3e246';
   const REDIRECT_URI = process.env.URL ? `${process.env.URL}/.netlify/functions/facebook-auth` : 'http://localhost:8888/.netlify/functions/facebook-auth';
 
+  // Debug logging
+  console.log('Environment debug:', {
+    URL: process.env.URL,
+    REDIRECT_URI,
+    APP_ID,
+    hasSecret: !!process.env.FACEBOOK_APP_SECRET,
+    httpMethod,
+    hasCode: !!queryStringParameters?.code
+  });
+
   // Step 1: Redirect to Facebook OAuth
   if (httpMethod === 'GET' && !queryStringParameters?.code) {
     const scopes = [
@@ -66,12 +76,38 @@ exports.handler = async (event, context) => {
         body: '',
       };
     } catch (error) {
+      console.error('OAuth error:', error);
       return {
         statusCode: 500,
         headers,
-        body: JSON.stringify({ error: error.message }),
+        body: JSON.stringify({ 
+          error: error.message,
+          debug: {
+            APP_ID,
+            REDIRECT_URI,
+            hasSecret: !!APP_SECRET
+          }
+        }),
       };
     }
+  }
+
+  // Debug endpoint
+  if (httpMethod === 'GET' && queryStringParameters?.debug === 'true') {
+    return {
+      statusCode: 200,
+      headers,
+      body: JSON.stringify({
+        environment: {
+          URL: process.env.URL,
+          REDIRECT_URI,
+          APP_ID,
+          hasSecret: !!process.env.FACEBOOK_APP_SECRET,
+          hasAppId: !!process.env.FACEBOOK_APP_ID,
+          netlifyUrl: process.env.NETLIFY_URL || 'Not set'
+        }
+      }),
+    };
   }
 
   return {
