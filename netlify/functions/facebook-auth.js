@@ -14,8 +14,16 @@ exports.handler = async (event, context) => {
     return { statusCode: 200, headers, body: '' };
   }
 
-  const APP_ID = process.env.FACEBOOK_APP_ID || '1068046521647182';
-  const APP_SECRET = process.env.FACEBOOK_APP_SECRET || '4ef4431231c770c7da966bbd31d3e246';
+  const APP_ID = process.env.FACEBOOK_APP_ID;
+  const APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+
+  if (!APP_ID || !APP_SECRET) {
+    return {
+      statusCode: 500,
+      headers,
+      body: JSON.stringify({ error: 'Missing Facebook app configuration' }),
+    };
+  }
   const REDIRECT_URI = process.env.URL ? `${process.env.URL}/.netlify/functions/facebook-auth` : 'http://localhost:8888/.netlify/functions/facebook-auth';
 
   // Debug logging
