@@ -74,11 +74,13 @@ class FacebookGraphAPI {
       for (const page of pagesResponse.data) {
         if (page.instagram_business_account) {
           const igAccount = await this.makeRequest(`/${page.instagram_business_account.id}?fields=id,username,profile_picture_url`);
-          instagramAccounts.push({
-            ...igAccount,
-            page_name: page.name,
-            page_id: page.id
-          });
+          if (igAccount) {
+            instagramAccounts.push({
+              ...igAccount,
+              page_name: page.name,
+              page_id: page.id
+            });
+          }
         }
       }
 

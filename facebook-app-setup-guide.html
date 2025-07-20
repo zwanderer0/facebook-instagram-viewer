@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Facebook App Setup Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Facebook App Configuration Guide</h1>
+        
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <h2 class="text-lg font-semibold text-red-800 mb-2">Current Error:</h2>
+            <p class="text-red-700">The domain of this URL isn't included in the app's domains.</p>
+        </div>
+
+        <div class="space-y-6">
+            <!-- Step 1: Access Facebook Developer Console -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Step 1: Open Facebook Developer Console</h2>
+                <ol class="list-decimal ml-6 space-y-2">
+                    <li>
+                        <a href="https://developers.facebook.com/apps/" target="_blank" class="text-blue-600 hover:underline">
+                            Go to Facebook for Developers →
+                        </a>
+                    </li>
+                    <li>Find your app with ID: <code class="bg-gray-200 px-2 py-1 rounded">1068046521647182</code></li>
+                    <li>Click on the app to open its dashboard</li>
+                </ol>
+            </div>
+
+            <!-- Step 2: Configure App Domains -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Step 2: Configure App Domains</h2>
+                <ol class="list-decimal ml-6 space-y-2">
+                    <li>In the left sidebar, click "App Settings" → "Basic"</li>
+                    <li>Scroll down to "App Domains"</li>
+                    <li>Add these domains (one per line):
+                        <div class="bg-gray-100 p-3 rounded mt-2 font-mono text-sm">
+                            localhost<br>
+                            127.0.0.1<br>
+                            your-future-netlify-domain.netlify.app
+                        </div>
+                    </li>
+                    <li>Click "Save Changes"</li>
+                </ol>
+            </div>
+
+            <!-- Step 3: Configure Facebook Login -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Step 3: Configure Facebook Login</h2>
+                <ol class="list-decimal ml-6 space-y-2">
+                    <li>In the left sidebar, find "Products" section</li>
+                    <li>If "Facebook Login" isn't added, click "+ Add Product" and add it</li>
+                    <li>Click "Facebook Login" → "Settings"</li>
+                    <li>In "Valid OAuth Redirect URIs", add:
+                        <div class="bg-gray-100 p-3 rounded mt-2 font-mono text-sm">
+                            http://localhost:8080/<br>
+                            http://127.0.0.1:8080/<br>
+                            https://your-future-netlify-domain.netlify.app/<br>
+                            https://your-future-netlify-domain.netlify.app/.netlify/functions/facebook-auth
+                        </div>
+                    </li>
+                    <li>Set "Client OAuth Login" to "Yes"</li>
+                    <li>Set "Web OAuth Login" to "Yes"</li>
+                    <li>Click "Save Changes"</li>
+                </ol>
+            </div>
+
+            <!-- Step 4: Quick Test Option -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <h2 class="text-xl font-semibold mb-4 text-blue-800">Quick Test: Create New Test App</h2>
+                <p class="text-blue-700 mb-4">If you don't want to modify the existing app, create a test app:</p>
+                <ol class="list-decimal ml-6 space-y-2 text-blue-700">
+                    <li>Go to <a href="https://developers.facebook.com/apps/create/" target="_blank" class="underline">Create New App</a></li>
+                    <li>Choose "Consumer" → "Next"</li>
+                    <li>Enter app name: "Comments Viewer Test"</li>
+                    <li>Click "Create App"</li>
+                    <li>Add Facebook Login product</li>
+                    <li>Configure as described in steps above</li>
+                    <li>Use the new App ID in our code</li>
+                </ol>
+            </div>
+
+            <!-- Alternative: Local Server -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold mb-4">Alternative: Run Local HTTP Server</h2>
+                <p class="mb-4">Instead of opening as file://, run a local server:</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <h3 class="font-semibold mb-2">Option 1: Python Server</h3>
+                        <div class="bg-gray-100 p-3 rounded font-mono text-sm">
+                            cd /Users/zwanderer/Desktop/2025/sauravsaas<br>
+                            python3 -m http.server 8080
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">Then open: http://localhost:8080/local-test.html</p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-2">Option 2: Node.js Server</h3>
+                        <div class="bg-gray-100 p-3 rounded font-mono text-sm">
+                            npx http-server -p 8080
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">Then open: http://localhost:8080/local-test.html</p>
+                    </div>
+
+                    <div>
+                        <h3 class="font-semibold mb-2">Option 3: Live Server (VS Code)</h3>
+                        <p class="text-sm text-gray-600">Install Live Server extension in VS Code, right-click local-test.html → "Open with Live Server"</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Test Button -->
+            <div class="bg-white rounded-lg shadow-md p-6 text-center">
+                <h2 class="text-xl font-semibold mb-4">Test After Configuration</h2>
+                <button onclick="testLogin()" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700">
+                    Test Facebook Login
+                </button>
+                <p class="text-sm text-gray-600 mt-2">Make sure you've completed the configuration steps above first</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function testLogin() {
+            // Test the login with the current app ID
+            window.open('/Users/zwanderer/Desktop/2025/sauravsaas/local-test.html', '_blank');
+        }
+    </script>
+</body>
+</html>
