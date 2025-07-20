@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Deletion Instructions - SocialPull</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">Data Deletion Instructions</h1>
+        
+        <div class="bg-white rounded-lg shadow-md p-8">
+            <section class="mb-8">
+                <h2 class="text-xl font-semibold mb-4">How to Delete Your Data from SocialPull</h2>
+                <p class="mb-4">SocialPull is designed with privacy in mind. We do not store your personal data or social media content on our servers. However, you can take the following steps to ensure all data is removed:</p>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">1. Remove App Access from Facebook</h3>
+                <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                    <p class="mb-2"><strong>This is the most important step to revoke all access:</strong></p>
+                    <ol class="list-decimal pl-6 space-y-2">
+                        <li>Go to <a href="https://www.facebook.com/settings?tab=applications" class="text-blue-600 hover:text-blue-700 underline" target="_blank">Facebook Settings → Apps and Websites</a></li>
+                        <li>Find "SocialPull" in your active apps list</li>
+                        <li>Click "Remove" or "Revoke Access"</li>
+                        <li>Confirm the removal</li>
+                    </ol>
+                </div>
+                <p class="text-sm text-gray-600">This immediately revokes SocialPull's access to your Facebook data and prevents any future data access.</p>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">2. Clear Local Browser Data</h3>
+                <p class="mb-4">SocialPull stores your access token locally in your browser. To clear this:</p>
+                <div class="bg-gray-50 p-4 rounded-lg mb-4">
+                    <p class="mb-2"><strong>Option A: Use SocialPull's Logout</strong></p>
+                    <ol class="list-decimal pl-6 space-y-1">
+                        <li>Visit <a href="https://socialpull.netlify.app/" class="text-blue-600 hover:text-blue-700 underline">SocialPull</a></li>
+                        <li>If logged in, click the "Logout" button</li>
+                        <li>This clears all stored tokens and data</li>
+                    </ol>
+                </div>
+                <div class="bg-gray-50 p-4 rounded-lg">
+                    <p class="mb-2"><strong>Option B: Clear Browser Storage Manually</strong></p>
+                    <ol class="list-decimal pl-6 space-y-1">
+                        <li>Go to your browser settings</li>
+                        <li>Find "Privacy" or "Clear browsing data"</li>
+                        <li>Select "Cookies and site data" or "Local storage"</li>
+                        <li>Clear data for socialpull.netlify.app</li>
+                    </ol>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">3. What Data We Actually Store</h3>
+                <div class="bg-yellow-50 p-4 rounded-lg">
+                    <p class="mb-2"><strong>Important:</strong> SocialPull does not store any of your social media data on our servers. Here's what happens to your data:</p>
+                    <ul class="list-disc pl-6 space-y-1">
+                        <li><strong>Facebook/Instagram Data:</strong> Never stored on our servers - only displayed in real-time</li>
+                        <li><strong>Access Tokens:</strong> Stored only in your browser's local storage</li>
+                        <li><strong>User Profile:</strong> Only your name and Facebook ID, stored locally in browser</li>
+                        <li><strong>Server Logs:</strong> May contain basic access logs (IP addresses, timestamps) - automatically purged after 30 days</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">4. Request Manual Data Deletion</h3>
+                <p class="mb-4">If you want to ensure complete data removal or have concerns about your data, you can contact us:</p>
+                <div class="bg-white border border-gray-200 p-4 rounded-lg">
+                    <p class="mb-2"><strong>Contact Methods:</strong></p>
+                    <ul class="list-disc pl-6 space-y-1">
+                        <li>Create an issue on our <a href="https://github.com/zwanderer0/facebook-instagram-viewer/issues" class="text-blue-600 hover:text-blue-700 underline" target="_blank">GitHub repository</a></li>
+                        <li>Include your Facebook user ID and request type</li>
+                        <li>We will respond within 7 business days</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">5. Data Deletion Confirmation</h3>
+                <p class="mb-4">After following the steps above:</p>
+                <ul class="list-disc pl-6 space-y-2">
+                    <li>SocialPull will no longer have access to your Facebook data</li>
+                    <li>No new data can be collected</li>
+                    <li>Any locally stored tokens will be cleared</li>
+                    <li>You can verify removal by checking Facebook's Apps and Websites settings</li>
+                </ul>
+            </section>
+
+            <section class="mb-8 bg-green-50 p-4 rounded-lg">
+                <h3 class="text-lg font-semibold mb-3 text-green-800">✅ Verification</h3>
+                <p class="text-green-700">To verify your data has been removed:</p>
+                <ol class="list-decimal pl-6 space-y-1 text-green-700">
+                    <li>Check that SocialPull is no longer listed in your Facebook Apps</li>
+                    <li>Visit SocialPull - you should see the login screen (not your data)</li>
+                    <li>Clear your browser cache if you still see old data</li>
+                </ol>
+            </section>
+
+            <section class="mb-8">
+                <h3 class="text-lg font-semibold mb-3">Questions or Issues?</h3>
+                <p class="mb-4">If you have any questions about data deletion or need assistance:</p>
+                <ul class="list-disc pl-6 space-y-1">
+                    <li>Review our <a href="/privacy-policy.html" class="text-blue-600 hover:text-blue-700 underline">Privacy Policy</a></li>
+                    <li>Contact us via <a href="https://github.com/zwanderer0/facebook-instagram-viewer/issues" class="text-blue-600 hover:text-blue-700 underline" target="_blank">GitHub Issues</a></li>
+                    <li>We are committed to respecting your privacy and data rights</li>
+                </ul>
+            </section>
+        </div>
+
+        <div class="mt-8 text-center">
+            <a href="/" class="text-blue-600 hover:text-blue-700 underline">← Back to SocialPull</a>
+        </div>
+    </div>
+</body>
+</html>
